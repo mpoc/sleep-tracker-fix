@@ -16,37 +16,37 @@ public class Main {
 //        System.out.println(sleepmarker.getFormattedString());
 
         String sheetsUrl = args[0];
-        String filename = "src/com/mpoc/sleeptrackerfix/log.csv";
+        String csvFilename = "src/com/mpoc/sleeptrackerfix/log.csv";
 
-        getLog(sheetsUrl, filename);
+        getLog(sheetsUrl, csvFilename);
 
-        ArrayList<String[]> rows = new ArrayList<>();
-        populateRowsList(rows, filename);
+        ArrayList<String[]> rowsList = new ArrayList<>();
+        populateRowsList(rowsList, csvFilename);
 
-        ArrayList<SleepMarker> sleepMarkers = new ArrayList<>();
-        populateSleepMarkersList(sleepMarkers, rows);
+        ArrayList<SleepMarker> sleepMarkerList = new ArrayList<>();
+        populateSleepMarkersList(sleepMarkerList, rowsList);
 
-//        sleepMarkers.forEach(System.out::println);
-
-        ArrayList<Sleep> sleepList = new ArrayList<>();
-
-        Iterator<SleepMarker> sleepMarkersIterator = sleepMarkers.iterator();
-        while (sleepMarkersIterator.hasNext()) {
-            sleepList.add(new Sleep(sleepMarkersIterator.next(), sleepMarkersIterator.next()));
-        }
-
-        sleepList.forEach(System.out::println);
-
-        Calendar cal = new GregorianCalendar();
-        cal.setTimeZone(TimeZone.getTimeZone("Europe/Vilnius"));
-        cal.set(2019,02,27, 11,2);
-        System.out.println(cal.getTime());
-        System.out.println(cal.get(Calendar.HOUR));
-
-        Calendar cal2 = (GregorianCalendar)cal.clone();
-        cal2.setTimeZone(TimeZone.getTimeZone("Europe/London"));
-        System.out.println(cal2.getTime());
-        System.out.println(cal2.get(Calendar.HOUR));
+        sleepMarkerList.forEach(System.out::println);
+//
+//        ArrayList<Sleep> sleepList = new ArrayList<>();
+//
+//        Iterator<SleepMarker> sleepMarkersIterator = sleepMarkerList.iterator();
+//        while (sleepMarkersIterator.hasNext()) {
+//            sleepList.add(new Sleep(sleepMarkersIterator.next(), sleepMarkersIterator.next()));
+//        }
+//
+//        sleepList.forEach(System.out::println);
+//
+//        Calendar cal = new GregorianCalendar();
+//        cal.setTimeZone(TimeZone.getTimeZone("Europe/Vilnius"));
+//        cal.set(2019,02,27, 11,2);
+//        System.out.println(cal.getTime());
+//        System.out.println(cal.get(Calendar.HOUR));
+//
+//        Calendar cal2 = (GregorianCalendar)cal.clone();
+//        cal2.setTimeZone(TimeZone.getTimeZone("Europe/London"));
+//        System.out.println(cal2.getTime());
+//        System.out.println(cal2.get(Calendar.HOUR));
 
 
     }
@@ -66,9 +66,9 @@ public class Main {
         }
     }
 
-    public static void populateSleepMarkersList(ArrayList<SleepMarker> sleepMarkers, ArrayList<String[]> rows) {
-        rows.forEach(row -> {
-            sleepMarkers.add(new SleepMarker(row[0], row[3], row[4], row[1]));
+    public static void populateSleepMarkersList(ArrayList<SleepMarker> sleepMarkerList, ArrayList<String[]> rowsList) {
+        rowsList.forEach(row -> {
+            sleepMarkerList.add(new SleepMarker(row));
         });
     }
 }

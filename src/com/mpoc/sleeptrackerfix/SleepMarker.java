@@ -1,5 +1,7 @@
 package com.mpoc.sleeptrackerfix;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -8,40 +10,32 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class SleepMarker extends com.skedgo.converter.TimezoneMapper {
-    private static final TimeZone IFTTT_TIMEZONE = TimeZone.getTimeZone("Europe/Vilnius");
+    private static final String IFTTT_TIMEZONE = "Europe/Vilnius";
 
-    private Calendar date;
-    private Calendar adjustedDate;
+    private static final int DATE = 0;
+    private static final int START_STOP = 1;
+    private static final int LENGTH = 2;
+    private static final int LAT = 3;
+    private static final int LONG = 4;
+
+    private ZonedDateTime date;
+    private ZonedDateTime adjustedDate;
     private double latitude;
     private double longitude;
     private boolean start;
-    private TimeZone localTimezone;
+    private ZoneId localTimezone;
 
-    public SleepMarker(Calendar date, double latitude, double longitude, boolean start) {
-        this.date = date;
-//        this.date.setTimeZone(IFTTT_TIMEZONE);
-        this.latitude = latitude;
-        this.longitude = longitude;
-        this.start = start;
-        localTimezone = getTimeZoneFromLatLong(latitude, longitude);
-        adjustDate();
-    }
-
-    public SleepMarker(String date, String latitude, String longitude, String start) {
-        this.date = parseDate(date);
-//        this.date.setTimeZone(IFTTT_TIMEZONE);
-        this.latitude = parseLatitude(latitude);
-        this.longitude = parseLongitude(longitude);
-        this.start = parseStart(start);
-        localTimezone = getTimeZoneFromLatLong(this.latitude, this.longitude);
+    public SleepMarker(String[] csvCells) {
+        date = parseDate(csvCells[DATE]);
+        start = parseStart(csvCells[START_STOP]);
+        latitude = parseLatitude(csvCells[LAT]);
+        longitude = parseLongitude(csvCells[LONG]);
+        localTimezone = ZoneId.of(latLngToTimezoneString(latitude, longitude));
         adjustDate();
     }
 
     private void adjustDate() {
-        adjustedDate = (GregorianCalendar)date.clone();
-        if (!isSameTimezone(localTimezone, IFTTT_TIMEZONE)) {
-            adjustedDate.setTimeZone(localTimezone);
-        }
+        adjustedDate = date.withZoneSameInstant(localTimezone);
     }
 
     private boolean parseStart(String start) {
@@ -56,19 +50,26 @@ public class SleepMarker extends com.skedgo.converter.TimezoneMapper {
         return Double.parseDouble(latitude);
     }
 
-    private Calendar parseDate(String date) {
+    private ZonedDateTime parseDate(String dateTimeString) {
         final String regex = "\\\"(\\w+) (\\d{2}). (\\d{4}) at (\\d{2}):(\\d{2})(\\w{2})\"";
         final Pattern pattern = Pattern.compile(regex);
-        final Matcher matcher = pattern.matcher(date);
+        final Matcher matcher = pattern.matcher(dateTimeString);
         matcher.find();
 
-        String year = matcher.group(3);
-        String month = matcher.group(1);
+        String yearString = matcher.group(3);
+        String monthString = matcher.group(1);
+        String dayString = matcher.group(2);
+        String ampmHourString = matcher.group(4);
+        String minuteString = matcher.group(5);
+        String ampmString = matcher.group(6);
+
+        int yearInt = Integer.parseInt(yearString);
         int monthInt = -1;
-        String day = matcher.group(2);
-        String hour = matcher.group(4);
-//        int hourInt = -1;
-        String minute = matcher.group(5);
+        int dayInt = Integer.parseInt(dayString);
+        int ampmHourInt = Integer.parseInt(ampmHourString);
+        int minuteInt = Integer.parseInt(minuteString);
+        int ampmInt = (ampmString.equals("AM")) ? 0 : 1;
+        int hourOfDayInt = convertAmPmToHourOfDay(ampmHourInt, ampmInt);
 
         String[] months = {
                 "January",
@@ -85,52 +86,32 @@ public class SleepMarker extends com.skedgo.converter.TimezoneMapper {
                 "December"
         };
 
-
         for (int i = 0; i < months.length; i++) {
-            if (month.equals(months[i])) {
-//                if ((i+1) < 10) {
-//                    month = "0" + (i+1);
-//                }
-//                else {
-//                    month = "" + (i+1);
-//                }
-                monthInt = i;
+            if (monthString.equals(months[i])) {
+                monthInt = i+1;
             }
         }
 
-
-        if (matcher.group(6).equals("PM") && !hour.equals("12")) {
-            int hourInt = Integer.parseInt(hour);
-            hourInt += 12;
-            hour = "" + hourInt;
-        }
-        else if (matcher.group(6).equals("AM") && hour.equals("12")) {
-            hour = "00";
-//            hourInt = 0;
-        }
-
-        int yearInt = Integer.parseInt(year);
-//        int monthInt = Integer.parseInt(month);
-        int dayInt = Integer.parseInt(day);
-        int hourInt = Integer.parseInt(hour);
-        int minuteInt = Integer.parseInt(minute);
-
-        Calendar calendar = new GregorianCalendar();
-        calendar.set(yearInt, monthInt, dayInt, hourInt, minuteInt);
-        return calendar;
+        return ZonedDateTime.of(yearInt, monthInt, dayInt, hourOfDayInt, minuteInt, 0, 0, ZoneId.of(IFTTT_TIMEZONE));
     }
 
-    private TimeZone getTimeZoneFromLatLong(double latitude, double longitude) {
-        String timezoneString = latLngToTimezoneString(latitude, longitude);
-        return TimeZone.getTimeZone(timezoneString);
+    /**
+     *
+     * @param ampmHour 1-12
+     * @param ampm 0 for AM, 1 for PM
+     * @return
+     */
+    private int convertAmPmToHourOfDay(int ampmHour, int ampm) {
+        ampmHour = (ampmHour == 12) ? 0 : ampmHour;
+        return (ampm == 1) ? ampmHour+12 : ampmHour;
     }
 
-    public Calendar getCalendar() {
+    public ZonedDateTime getDate() {
+        return date;
+    }
+
+    public ZonedDateTime getAdjustedDate() {
         return adjustedDate;
-    }
-
-    public Date getDate() {
-        return adjustedDate.getTime();
     }
 
     public double getLatitude() {
@@ -145,25 +126,16 @@ public class SleepMarker extends com.skedgo.converter.TimezoneMapper {
         return start;
     }
 
-    public TimeZone getLocalTimezone() {
+    public ZoneId getLocalTimezone() {
         return localTimezone;
     }
 
-    public String getFormattedString() {
-        return adjustedDate.get(Calendar.YEAR) + "-" +
-                adjustedDate.get(Calendar.MONTH) + "-" +
-                adjustedDate.get(Calendar.DAY_OF_MONTH) + " " +
-                adjustedDate.get(Calendar.HOUR_OF_DAY) + ":" +
-                adjustedDate.get(Calendar.MINUTE);
+    private String isStartString() {
+        return start ? "Started" : "Stopped";
     }
 
     @Override
     public String toString() {
-        String startString = isStart() ? "Started" : "Stopped";
-        return startString + " at " + getFormattedString() + " in " + localTimezone.getID();
-    }
-
-    private static boolean isSameTimezone(TimeZone first, TimeZone second) {
-        return first.getID().equals(second.getID());
+        return isStartString() + " at " + adjustedDate.toString();
     }
 }
