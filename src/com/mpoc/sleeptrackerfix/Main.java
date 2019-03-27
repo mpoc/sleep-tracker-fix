@@ -26,29 +26,15 @@ public class Main {
         ArrayList<SleepMarker> sleepMarkerList = new ArrayList<>();
         populateSleepMarkersList(sleepMarkerList, rowsList);
 
-        sleepMarkerList.forEach(System.out::println);
-//
-//        ArrayList<Sleep> sleepList = new ArrayList<>();
-//
-//        Iterator<SleepMarker> sleepMarkersIterator = sleepMarkerList.iterator();
-//        while (sleepMarkersIterator.hasNext()) {
-//            sleepList.add(new Sleep(sleepMarkersIterator.next(), sleepMarkersIterator.next()));
-//        }
-//
-//        sleepList.forEach(System.out::println);
-//
-//        Calendar cal = new GregorianCalendar();
-//        cal.setTimeZone(TimeZone.getTimeZone("Europe/Vilnius"));
-//        cal.set(2019,02,27, 11,2);
-//        System.out.println(cal.getTime());
-//        System.out.println(cal.get(Calendar.HOUR));
-//
-//        Calendar cal2 = (GregorianCalendar)cal.clone();
-//        cal2.setTimeZone(TimeZone.getTimeZone("Europe/London"));
-//        System.out.println(cal2.getTime());
-//        System.out.println(cal2.get(Calendar.HOUR));
+//        sleepMarkerList.forEach(System.out::println);
 
+        ArrayList<Sleep> sleepList = new ArrayList<>();
+        Iterator<SleepMarker> sleepMarkersIterator = sleepMarkerList.iterator();
+        while (sleepMarkersIterator.hasNext()) {
+            sleepList.add(new Sleep(sleepMarkersIterator.next(), sleepMarkersIterator.next()));
+        }
 
+        sleepList.forEach(System.out::println);
     }
 
     public static void getLog(String url, String filename) throws Exception {
