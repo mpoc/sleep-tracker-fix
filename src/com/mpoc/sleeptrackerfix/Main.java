@@ -7,14 +7,13 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.Duration;
+import java.time.LocalDate;
 import java.util.*;
 
 public class Main {
 
     public static void main(String[] args) throws Exception {
-//        SleepMarker sleepmarker = new SleepMarker("\"February 27, 2019 at 11:00AM\"", "51.5541025", "-0.0888811", "Stopped");
-//        System.out.println(sleepmarker.getFormattedString());
-
         String sheetsUrl = args[0];
         String csvFilename = "src/com/mpoc/sleeptrackerfix/log.csv";
 
@@ -26,15 +25,46 @@ public class Main {
         ArrayList<SleepMarker> sleepMarkerList = new ArrayList<>();
         populateSleepMarkersList(sleepMarkerList, rowsList);
 
-//        sleepMarkerList.forEach(System.out::println);
 
         ArrayList<Sleep> sleepList = new ArrayList<>();
         Iterator<SleepMarker> sleepMarkersIterator = sleepMarkerList.iterator();
+
+        /*
+         Every sleep is assigned a date, for which it "was slept". In general, for a person
+         with a normal sleep schedule it should be the date that the sleep starts in.
+         For example, going to sleep at 2019-03-26 22:00 and waking up at 2019-03-27 06:00
+         means that the sleep is assigned for the date of 2019-03-26.
+         However, I do not have such a sleep schedule, which means that often a sleep for a
+         day will only start after midnight.
+        */
+        double amountOfHoursForAnAllNighter = 30;
+
+        LocalDate currentAssignDate = LocalDate.of(2018,1,23);
+
+        sleepList.add(new Sleep(sleepMarkersIterator.next(), sleepMarkersIterator.next(), currentAssignDate));
+
+        currentAssignDate = currentAssignDate.plusDays(1);
+
         while (sleepMarkersIterator.hasNext()) {
-            sleepList.add(new Sleep(sleepMarkersIterator.next(), sleepMarkersIterator.next()));
+            SleepMarker lastWakeUp = sleepList.get(sleepList.size()-1).getStop();
+            SleepMarker currentSleepStart = sleepMarkersIterator.next();
+            SleepMarker currentSleepStop = sleepMarkersIterator.next();
+
+            if (Duration.between(lastWakeUp.getAdjustedDate(), currentSleepStart.getAdjustedDate()).toHours() > amountOfHoursForAnAllNighter) {
+                sleepList.add(new Sleep(currentAssignDate));
+                currentAssignDate = currentAssignDate.plusDays(1);
+            }
+
+            sleepList.add(new Sleep(currentSleepStart, currentSleepStop, currentAssignDate));
+
+            currentAssignDate = currentAssignDate.plusDays(1);
         }
 
         sleepList.forEach(System.out::println);
+
+//        sleepList.stream()
+//                .filter(sleep -> sleep.getAssignedDate().equals(sleep.getStart().getAdjustedDate().toLocalDate()))
+//                .forEach(System.out::println);
     }
 
     public static void getLog(String url, String filename) throws Exception {
