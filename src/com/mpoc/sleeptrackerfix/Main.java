@@ -17,15 +17,18 @@ public class Main {
         String sheetsUrl = args[0];
         String csvFilename = "src/com/mpoc/sleeptrackerfix/log.csv";
 
+        // Parse the raw csv file.
         getLog(sheetsUrl, csvFilename);
 
+        // Get all the rows from the csv file.
         ArrayList<String[]> rowsList = new ArrayList<>();
         populateRowsList(rowsList, csvFilename);
 
+        // Turn each row into an individual SleepMarker object and store it in a list.
         ArrayList<SleepMarker> sleepMarkerList = new ArrayList<>();
         populateSleepMarkersList(sleepMarkerList, rowsList);
 
-
+        // Turn the SleepMarker objects into Sleeps (SleepPeriods or AllNighters)
         ArrayList<Sleep> sleepList = new ArrayList<>();
         Iterator<SleepMarker> sleepMarkersIterator = sleepMarkerList.iterator();
 
@@ -39,32 +42,36 @@ public class Main {
         */
         double amountOfHoursForAnAllNighter = 30;
 
+        // The date I started tracking my sleep
         LocalDate currentAssignDate = LocalDate.of(2018,1,23);
 
-        sleepList.add(new Sleep(sleepMarkersIterator.next(), sleepMarkersIterator.next(), currentAssignDate));
+        // Add the first SleepPeriod without any checks
+        sleepList.add(new SleepPeriod(sleepMarkersIterator.next(), sleepMarkersIterator.next(), currentAssignDate));
 
+        // Add one day to the date to assign to Sleep objects
         currentAssignDate = currentAssignDate.plusDays(1);
 
         while (sleepMarkersIterator.hasNext()) {
-            SleepMarker lastWakeUp = sleepList.get(sleepList.size()-1).getStop();
+            // The last element of sleepList is always going to be a SleepPeriod, because that's the last
+            // think done at the end of this loop. Therefore, it is safe to cast the last element of sleepList.
+            SleepMarker lastWakeUp = ((SleepPeriod) sleepList.get(sleepList.size()-1)).getStop();
             SleepMarker currentSleepStart = sleepMarkersIterator.next();
             SleepMarker currentSleepStop = sleepMarkersIterator.next();
 
+            // If the duration between last wake up and this sleep start is more than amountOfHoursForAnAllNighter,
+            // classify it as an all-nighter
             if (Duration.between(lastWakeUp.getAdjustedDate(), currentSleepStart.getAdjustedDate()).toHours() > amountOfHoursForAnAllNighter) {
-                sleepList.add(new Sleep(currentAssignDate));
+                sleepList.add(new AllNighter(currentAssignDate));
                 currentAssignDate = currentAssignDate.plusDays(1);
             }
 
-            sleepList.add(new Sleep(currentSleepStart, currentSleepStop, currentAssignDate));
+            // This assumes that I never pull two all-nighters in a row
+            // A way to fix this is to check for a multiple of amountOfHoursForAnAllNighter and
+            // add that number of days to currentAssignDate (essentially skipping several dates to assign).
+            sleepList.add(new SleepPeriod(currentSleepStart, currentSleepStop, currentAssignDate));
 
             currentAssignDate = currentAssignDate.plusDays(1);
         }
-
-        sleepList.forEach(System.out::println);
-
-//        sleepList.stream()
-//                .filter(sleep -> sleep.getAssignedDate().equals(sleep.getStart().getAdjustedDate().toLocalDate()))
-//                .forEach(System.out::println);
     }
 
     public static void getLog(String url, String filename) throws Exception {
