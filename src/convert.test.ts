@@ -1,7 +1,6 @@
 import {
   transformSleepMarker,
   SleepMarkerRow,
-  TransformedSleepMarkerRow,
 } from './convert';
 import moment from 'moment-timezone';
 

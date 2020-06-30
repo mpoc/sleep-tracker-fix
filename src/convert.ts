@@ -12,7 +12,7 @@ export type SleepMarkerRow = {
   longitude: string;
 };
 
-export type TransformedSleepMarkerRow = {
+export type TransformedSleepMarker = {
   localTime: moment.Moment;
   utcTime: moment.Moment;
   isStart: boolean;
@@ -24,14 +24,14 @@ export type TransformedSleepMarkerRow = {
 
 export const transformSleepMarker = (
   data: SleepMarkerRow
-): TransformedSleepMarkerRow => {
+): TransformedSleepMarker => {
   const IFTTT_DATE_FORMAT = 'MMMM DD[,] YYYY [at] hh:mmA';
   const IFTTT_TIMEZONE = 'Europe/Vilnius';
 
   const IFTTTtime = moment.tz(data.time, IFTTT_DATE_FORMAT, IFTTT_TIMEZONE);
   const localTimezone = geoTz(data.latitude, data.longitude)[0];
 
-  const result: TransformedSleepMarkerRow = {
+  const result: TransformedSleepMarker = {
     utcTime: IFTTTtime.clone().utc(),
     localTime: IFTTTtime.clone().tz(localTimezone),
     isStart: data.markerType == 'Started',
@@ -47,12 +47,37 @@ export const convert = async () => {
   const url = process.env.SPREADSHEET_CSV_URL;
   const csv = (await Axios({url})).data;
   const headers = ['time', 'markerType', 'length', 'latitude', 'longitude'];
-  const stream = parse<SleepMarkerRow, TransformedSleepMarkerRow>({headers})
+  
+  const sleepMarkers: TransformedSleepMarker[] = [];
+
+  const stream = parse<SleepMarkerRow, TransformedSleepMarker>({headers})
     .transform(transformSleepMarker)
     .on('error', error => console.error(error))
-    .on('data', row => console.log(row))
-    .on('end', (rowCount: number) => console.log(`Parsed ${rowCount} rows`));
+    .on('data', row => sleepMarkers.push(row))
+    .on('end', (rowCount: number) => {
+        console.log(sleepMarkers);
+        console.log(`Parsed ${rowCount} rows`);
+        console.log(convertToNewFormat(sleepMarkers));
+    });
 
   stream.write(csv);
   stream.end();
 };
+
+type NewSleepMarkerFormat = {
+  "Timezone local time": string,
+  "Latitude": string,
+  "Longitude": string,
+  "Timezone": string,
+  "UTC time": string
+}
+
+export const convertToNewFormat = (sleepMarkers: TransformedSleepMarker[]): NewSleepMarkerFormat[] => {
+  return sleepMarkers.map((sleepMarker): NewSleepMarkerFormat => ({
+    "Timezone local time": sleepMarker.localTime.format('YYYY-MM-DD HH:mm:ss'),
+    "Latitude": String(sleepMarker.latitude),
+    "Longitude": String(sleepMarker.longitude),
+    "Timezone": sleepMarker.timezone,
+    "UTC time": sleepMarker.utcTime.format('YYYY-MM-DD HH:mm:ss')
+  }))
+}
