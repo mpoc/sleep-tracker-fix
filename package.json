@@ -11,14 +11,21 @@
     "check": "gts check",
     "clean": "gts clean",
     "fix": "gts fix",
-    "compile": "tsc"
+    "compile": "tsc",
+    "start": "node build/src/index.js",
+    "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts"
   },
   "devDependencies": {
     "@types/node": "^13.11.1",
     "gts": "^2.0.2",
+    "ts-node": "^8.10.2",
     "typescript": "^3.8.3"
   },
   "dependencies": {
-    "moment": "^2.27.0"
+    "axios": "^0.19.2",
+    "fast-csv": "^4.3.1",
+    "geo-tz": "^6.0.0",
+    "moment": "^2.27.0",
+    "moment-timezone": "^0.5.31"
   }
 }

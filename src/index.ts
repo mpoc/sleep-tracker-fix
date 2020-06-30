@@ -1,24 +1,53 @@
-console.log('Try npm run check/fix!');
+import { parse } from '@fast-csv/parse';
+import Axios from 'axios';
+import moment from 'moment-timezone';
+// @ts-ignore
+import geoTz from 'geo-tz';
 
-const longString =
-  'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer ut aliquet diam.';
+type SleepMarkerRow = {
+  time: string,
+  markerType: string,
+  length: string,
+  latitude: string,
+  longitude: string
+};
 
-const trailing = 'Semicolon';
+type TransformedSleepMarkerRow = {
+  localTime: moment.Moment,
+  utcTime: moment.Moment,
+  isStart: boolean,
+  length: number,
+  latitude: number,
+  longitude: number,
+  timezone: string
+};
 
-const why = 'am I tabbed?';
+const transformCsv = (data: SleepMarkerRow): TransformedSleepMarkerRow => {
+  const IFTTT_DATE_FORMAT = 'MMMM DD[,] YYYY [at] hh:mmA';
+  const IFTTT_TIMEZONE =	"Europe/Vilnius";
 
-export function doSomeStuff(
-  withThis: string,
-  andThat: string,
-  andThose: string[]
-) {
-  //function on one line
-  if (!andThose.length) {
-    return false;
-  }
-  console.log(withThis);
-  console.log(andThat);
-  console.dir(andThose);
-  return;
-}
-// TODO: more examples
+  const result: TransformedSleepMarkerRow = {
+    localTime: moment(data.time, IFTTT_DATE_FORMAT, true),
+    utcTime: moment(data.time, IFTTT_DATE_FORMAT, true),
+    isStart: data.markerType == 'Started',
+    length: Number(data.length),
+    latitude: Number(data.latitude),
+    longitude: Number(data.longitude),
+    timezone: geoTz(data.latitude, data.longitude)[0],
+  };
+  return result;
+};
+
+(async () => {
+  const url = '';
+  const csv = (await Axios({ url })).data;
+  const headers = ['time', 'markerType', 'length', 'latitude', 'longitude'];
+  const stream = parse<SleepMarkerRow, TransformedSleepMarkerRow>({headers})
+    .transform(transformCsv)
+    .on('error', error => console.error(error))
+    .on('data', row => console.log(row))
+    .on('end', (rowCount: number) => console.log(`Parsed ${rowCount} rows`));
+
+  stream.write(csv);
+  stream.end();
+})();

@@ -8,5 +8,6 @@
   "include": [
     "src/**/*.ts",
     "test/**/*.ts"
-  ]
+  ],
+  "lib": ["dom"]
 }
