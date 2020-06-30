@@ -44,8 +44,7 @@ export const transformSleepMarker = (
 };
 
 export const convert = async () => {
-  const url =
-    'https://docs.google.com/spreadsheets/d/1GL3O-lucueloWQBl2GDmgYBEDNxWTHDrqWxPKWB9P58/export?format=csv';
+  const url = process.env.SPREADSHEET_CSV_URL;
   const csv = (await Axios({url})).data;
   const headers = ['time', 'markerType', 'length', 'latitude', 'longitude'];
   const stream = parse<SleepMarkerRow, TransformedSleepMarkerRow>({headers})
