@@ -4,7 +4,7 @@ import moment from 'moment-timezone';
 // @ts-ignore
 import geoTz from 'geo-tz';
 
-type SleepMarkerRow = {
+export type SleepMarkerRow = {
   time: string,
   markerType: string,
   length: string,
@@ -22,7 +22,7 @@ type TransformedSleepMarkerRow = {
   timezone: string
 };
 
-const transformSleepMarker = (data: SleepMarkerRow): TransformedSleepMarkerRow => {
+export const transformSleepMarker = (data: SleepMarkerRow): TransformedSleepMarkerRow => {
   const IFTTT_DATE_FORMAT = 'MMMM DD[,] YYYY [at] hh:mmA';
   const IFTTT_TIMEZONE =	"Europe/Vilnius";
 
