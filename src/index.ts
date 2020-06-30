@@ -22,18 +22,21 @@ type TransformedSleepMarkerRow = {
   timezone: string
 };
 
-const transformCsv = (data: SleepMarkerRow): TransformedSleepMarkerRow => {
+const transformSleepMarker = (data: SleepMarkerRow): TransformedSleepMarkerRow => {
   const IFTTT_DATE_FORMAT = 'MMMM DD[,] YYYY [at] hh:mmA';
   const IFTTT_TIMEZONE =	"Europe/Vilnius";
 
+  const IFTTTtime = moment.tz(data.time, IFTTT_DATE_FORMAT, IFTTT_TIMEZONE);
+  const localTimezone = geoTz(data.latitude, data.longitude)[0];
+
   const result: TransformedSleepMarkerRow = {
-    localTime: moment(data.time, IFTTT_DATE_FORMAT, true),
-    utcTime: moment(data.time, IFTTT_DATE_FORMAT, true),
+    utcTime: IFTTTtime.clone().utc(),
+    localTime: IFTTTtime.clone().tz(localTimezone),
     isStart: data.markerType == 'Started',
     length: Number(data.length),
     latitude: Number(data.latitude),
     longitude: Number(data.longitude),
-    timezone: geoTz(data.latitude, data.longitude)[0],
+    timezone: localTimezone,
   };
   return result;
 };
@@ -43,7 +46,7 @@ const transformCsv = (data: SleepMarkerRow): TransformedSleepMarkerRow => {
   const csv = (await Axios({ url })).data;
   const headers = ['time', 'markerType', 'length', 'latitude', 'longitude'];
   const stream = parse<SleepMarkerRow, TransformedSleepMarkerRow>({headers})
-    .transform(transformCsv)
+    .transform(transformSleepMarker)
     .on('error', error => console.error(error))
     .on('data', row => console.log(row))
     .on('end', (rowCount: number) => console.log(`Parsed ${rowCount} rows`));
