@@ -27,7 +27,7 @@
   "dependencies": {
     "axios": "^0.19.2",
     "dotenv": "^8.2.0",
-    "fast-csv": "^4.3.1",
+    "fast-csv": "^4.3.6",
     "geo-tz": "^6.0.0",
     "moment": "^2.27.0",
     "moment-timezone": "^0.5.31"
